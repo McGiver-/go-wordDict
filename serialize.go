@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	dict "local/wordDictionary/dictionary"
+	dict "github.com/McGiver-/go-wordDict/dictionary"
 )
 
 type node struct {
@@ -20,12 +20,28 @@ type node struct {
 
 const dictionaryFile = "./dictionary.gob"
 const wordsFile = "/usr/share/dict/american-english"
+var topN = 3
+var routines = 100
+
 
 func main() {
+	d := dict.Dictionary()
+	ws := []string{}
+	for word := range readWordsFile(wordsFile) {
+		ws = append(ws,word)
+		d.Add(word)
+	}
+	nbWords := len(ws)
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(nbWords)
+	startTime := time.Now()
+	for _, word := range ws{
+		go func(word string,d *dict.Dict,w *sync.WaitGroup){
+			d.SearchN(word,topN)
+			w.Done()
+		}(word,d,&wg)
+	}
 	// d := dict.Dictionary()
-
 	// wordChan := readWordsFile(wordsFile)
 
 	// for word := range wordChan {
@@ -41,23 +57,22 @@ func main() {
 	// 	fmt.Println(err)
 	// }
 
-	var n = new(dict.Dict)
-	err := readGob(dictionaryFile, n)
-	startTime := time.Now()
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		go print("helpful", n, &wg)
-		go print("miracle", n, &wg)
-	}
 	wg.Wait()
 	endTime := time.Now()
 	elapsed := endTime.Sub(startTime)
-	fmt.Println("elapsed time ", elapsed)
+	fmt.Printf("took %s to return top %d words for %d words" ,
+	elapsed,
+	topN,
+	nbWords)
 }
 
 func print(str string, dict *dict.Dict, wg *sync.WaitGroup) {
 	fmt.Println(fmt.Sprintf(strings.Join(dict.Search(str), "\n")))
+	wg.Done()
+}
+
+func printN(str string, n int, dict *dict.Dict, wg *sync.WaitGroup) {
+	fmt.Println(fmt.Sprintf(strings.Join(dict.SearchN(str, n), "\n")))
 	wg.Done()
 }
 
