@@ -26,28 +26,29 @@ func (n *node) add(word string) bool {
 	return next.add(word[1:])
 }
 
-func (n *node) string() (str []string) {
+func (n *node) string() (bufArr []*buffer) {
 	if len(n.Children) == 0 {
-		return []string{string(n.Char)}
+		return []*buffer{buff(n.Char)}
 	}
 	if n.IsWord {
-		str = append(str, string(n.Char))
+		bufArr = append(bufArr, buff(n.Char))
 	}
 	for _, v := range n.Children {
 		if n.Char == 0 {
 			for _, l := range v.string() {
-				str = append(str, l)
+				bufArr = append(bufArr, l)
 			}
 		} else {
 			for _, l := range v.string() {
-				str = append(str, string(n.Char)+l)
+				l.prepend(n.Char)
+				bufArr = append(bufArr, l)
 			}
 		}
 	}
-	return str
+	return bufArr
 }
 
-func (n *node) stringN(topN *int) (str []string) {
+func (n *node) stringN(topN *int) (bufArr []*buffer) {
 	if n == nil {
 		return nil
 	}
@@ -57,12 +58,12 @@ func (n *node) stringN(topN *int) (str []string) {
 	}
 	if len(n.Children) == 0 {
 		*topN--
-		return []string{string(n.Char)}
+		return []*buffer{buff(n.Char)}
 	}
 
 	if n.IsWord {
 		*topN--
-		str = append(str, string(n.Char))
+		bufArr = append(bufArr, buff(n.Char))
 	}
 
 	for _, v := range n.Children {
@@ -75,11 +76,12 @@ func (n *node) stringN(topN *int) (str []string) {
 
 	for _, v := range children {
 		for _, l := range v.stringN(topN) {
-			str = append(str, string(n.Char)+l)
+			l.prepend(n.Char)
+			bufArr = append(bufArr, l)
 		}
 	}
 
-	return str
+	return bufArr
 }
 
 func (n *node) update(part string) bool {
@@ -97,7 +99,7 @@ func (n *node) update(part string) bool {
 	return next.update(part[1:])
 }
 
-func (n *node) search(part string) (str []string) {
+func (n *node) search(part string) []*buffer {
 	start := n.findPart(part)
 	if start == nil {
 		return nil
@@ -105,7 +107,7 @@ func (n *node) search(part string) (str []string) {
 	return start.string()
 }
 
-func (n *node) searchN(part string, topN *int) (str []string) {
+func (n *node) searchN(part string, topN *int) []*buffer {
 	start := n.findPart(part)
 	if start == nil {
 		return nil

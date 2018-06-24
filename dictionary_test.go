@@ -2,6 +2,7 @@ package dictionary
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -114,8 +115,10 @@ func TestDict_String(t *testing.T) {
 	sort.Strings(words)
 	sort.Strings(expect)
 
-	if !reflect.DeepEqual(words, expect) {
-		t.Errorf("words : %s \n and expected : %s \n not equal", words, expect)
+	for i := range words {
+		if words[i] != expect[i] {
+			t.Errorf("words : %s \n and expected : %s \n not equal", words, expect)
+		}
 	}
 }
 
@@ -161,32 +164,53 @@ func TestDict_SearchN(t *testing.T) {
 	test.Update("con")
 	test.Update("con")
 
-	if !reflect.DeepEqual(test.SearchN("ca", 2), []string{
-		"call",
-		"caller",
-	}) {
-		t.Errorf("expecting call and caller, got %s", test.SearchN("ca", 2))
+	if test.SearchN("ca", 2)[0] != "call" {
+		fmt.Printf("%x %x", test.SearchN("ca", 2)[0], "call")
 	}
 
-	if !reflect.DeepEqual(test.SearchN("ca", 10), []string{
-		"call",
-		"caller",
-		"cat",
-	}) {
-		t.Errorf("expecting call, caller and cat got %s", test.SearchN("ca", 3))
+	for i := range test.SearchN("ca", 2) {
+		if test.SearchN("ca", 2)[i] != []string{
+			"call",
+			"caller",
+		}[i] {
+			t.Errorf("expecting call and caller, got %s", test.SearchN("ca", 2))
+		}
 	}
 
-	if !reflect.DeepEqual(test.SearchN("cal", 1), []string{
-		"call",
-	}) {
-		t.Errorf("expecting call got %s", test.SearchN("cal", 1))
+	for i := range test.SearchN("ca", 2) {
+		if test.SearchN("ca", 10)[i] != []string{
+			"call",
+			"caller",
+			"cat",
+		}[i] {
+			t.Errorf("expecting call, caller and cat got %s", test.SearchN("ca", 3))
+		}
 	}
 
-	if len(test.SearchN("call", 0)) != 0 {
-		t.Errorf("could not search word %s", "call")
+	for i := range test.SearchN("ca", 1) {
+		if test.SearchN("ca", 10)[i] != []string{
+			"call",
+		}[i] {
+			t.Errorf("expecting call got %s", test.SearchN("cal", 1))
+		}
 	}
-	if len(test.SearchN("q", 1)) != 0 {
-		t.Errorf("could not search word %s", "o")
+
+	for i := range test.SearchN("call", 0) {
+
+		if test.SearchN("call", 0)[i] != []string{
+			"call",
+		}[i] {
+			t.Errorf("could not search word %s", "call")
+		}
+	}
+
+	for i := range test.SearchN("q", 1) {
+
+		if test.SearchN("q", 1)[i] != []string{
+			"call",
+		}[i] {
+			t.Errorf("could not search word %s", "o")
+		}
 	}
 }
 
@@ -222,6 +246,29 @@ func BenchmarkSearch(b *testing.B) {
 	ws := []string{}
 	for word := range wordChan {
 		ws = append(ws, word)
+		d.Add(word)
+	}
+
+	b.Run("chan", func(b *testing.B) {
+		for n := 0; n < b.N; n++ {
+			for _, word := range ws {
+				d.Search(word)
+			}
+		}
+	})
+}
+
+func BenchmarkSearchPart(b *testing.B) {
+	var wordsFile = "/usr/share/dict/american-english"
+	d := Dictionary()
+	wordChan := readWordsFile(wordsFile)
+	ws := []string{}
+	for word := range wordChan {
+		if len(word) > 3 {
+			ws = append(ws, word[:len(word)-2])
+		} else {
+			ws = append(ws, word)
+		}
 		d.Add(word)
 	}
 

@@ -20,15 +20,18 @@ func (dict *Dict) Update(word string) bool {
 }
 
 //String returns a slice of all the strings in the dictionary
-func (dict *Dict) String() []string {
-	return dict.Root.string()
+func (dict *Dict) String() (str []string) {
+	for _, b := range dict.Root.string() {
+		str = append(str, b.string())
+	}
+	return str
 }
 
 //Search returns a slice of strings that have the input string as a suffix
 func (dict *Dict) Search(word string) (res []string) {
 	p := word[:len(word)-1]
 	for _, v := range dict.Root.search(word) {
-		res = append(res, p+v)
+		res = append(res, p+v.string())
 	}
 	return res
 }
@@ -38,7 +41,7 @@ func (dict *Dict) Search(word string) (res []string) {
 func (dict *Dict) SearchN(word string, topN int) (res []string) {
 	p := word[:len(word)-1]
 	for _, v := range dict.Root.searchN(word, &topN) {
-		res = append(res, p+v)
+		res = append(res, p+v.string())
 	}
 	return res
 }
